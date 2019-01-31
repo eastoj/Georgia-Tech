@@ -1,0 +1,28 @@
+# With Loop
+# call ksvm.  Vanilladot is a simple linear kernel.
+bestC <- 0
+bestaccuracy <- 0
+C.values <- c(.00001, .0001, .001, .0.1, 1, 10, 100, 1000, 10000)
+accuracies <- c() # empty vector
+
+for (C in C.values) {
+  model <- ksvm(data[,1:10],data[,11],type="C-svc",kernel="vanilladot",C=C,scaled=TRUE)
+  # calculate a1...am
+  a <- colSums(model@xmatrix[[1]] * model@coef[[1]])
+  a
+  # calculate a0
+  a0 <- model@b
+  a0
+  # see what the model predicts
+  pred <- predict(model,data[,1:10])
+  pred
+  # see what fraction of the model’s predictions match the actual classification
+  accuracy <- sum(pred == data[,11]) / nrow(data)
+  accuracies <- c(accuracies, accuracy)
+  if (accuracy > bestaccuracy) {
+    bestC <- C
+    bestaccuracy <- accuracy}
+  print(paste("C =", C, "accuracy =", accuracy))
+}
+
+print(accuracies)
