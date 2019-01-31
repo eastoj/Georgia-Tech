@@ -1,1 +1,330 @@
 
+---
+title: "ISYE 6501 - Homework 2 Submission OE"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+---
+
+Question 3.1
+
+Using the same data set (credit_card_data.txt or credit_card_data-headers.txt) as in Question 2.2, use the ksvm or kknn function to find a good classifier:
+
+(a) using cross-validation (do this for the k-nearest-neighbors model; SVM is optional); and
+(b) splitting the data into training, validation, and test data sets (pick either KNN or SVM; the other
+is optional).
+
+
+Question 3.1(a)
+
+Firstly I am going to set up my environment to use the train.kknn model
+
+```{r}
+rm(list =ls())
+set.seed(1)
+library(kknn)
+getwd()
+credit_data <- read.table("credit_card_data.txt", stringsAsFactors = FALSE,header = FALSE)
+head(credit_data, 5)
+```
+Now i am going to run the model using kmax = 100 and 6 different kernels
+
+```{r}
+kknn_model1 <-train.kknn(V11 ~.,data = credit_data, kmax = 100,kernel = c("rectangular", "triangular", "epanechnikov", "gaussian", "rank", "optimal"))
+
+plot(kknn_model1)
+summary(kknn_model1)
+```
+
+Now i will move on to prediction using k = 55 and the "gaussian" kernel
+
+```{r}
+predicted1 <- predict(kknn_model1, credit_data)
+```
+
+Now i will determine the accuracy of this model
+
+```{r}
+accuracy1 <-sum(round(predicted1)==credit_data[,11])/nrow(credit_data)
+accuracy1
+```
+
+The train.kknn model gave me an accuracy of ~89%. However i am also going to use the cv.kknn model to see if there are any differences in prediction accuracy 
+
+Setting up the cv.kknn environment
+
+```{r}
+rm(list =ls())
+set.seed(1)
+credit_data <- read.table("credit_card_data.txt", stringsAsFactors = FALSE, header = FALSE)
+head(credit_data, 5)
+```
+
+Setting number of folds and nearest neighbours
+
+```{r}
+kfolds <- 10
+kneighbours <- 55
+```
+
+Building model using the "gaussian" Kernel as this was the best (and used in the final prediction) for train.kknn
+
+```{r}
+kknn_model1 <- cv.kknn(V11~., credit_data, kcv = kfolds, k = kneighbours, kernel = "gaussian")
+```
+
+predict values from model
+
+```{r}
+kknnmodel1_predicted <- round(kknn_model1[[1]][,2])
+sum(kknnmodel1_predicted == credit_data$V11)/nrow(credit_data)
+```
+
+Interestingly the prediction accuracy is lower at 84%
+
+Question 3.1(b)
+
+Setting up the environment 
+
+```{r}
+rm(list =ls())
+setwd("~/Desktop/GT OMSA/ISYE 6501/Wk2")
+library(kknn)
+set.seed(1)
+credit_data <- read.table("credit_card_data.txt", stringsAsFactors = FALSE, header = FALSE)
+```
+
+Randomizing the data
+
+```{r}
+rm_credit_data <- credit_data[sample(nrow(credit_data), replace = FALSE),]
+```
+
+Split the data 60,20,20 for training, validating,  and testing set after randomly shuffling rows
+
+```{r}
+kkn_train = rm_credit_data[1:393,]
+kkn_val = rm_credit_data[394:524,]
+kkn_test = rm_credit_data[525:654,]
+```
+
+Setting up 4 models (3a, 3b, 3c and 3d) each has a different k value and kernel
+
+```{r}
+kkn_model3a <- kknn(V11~., train = kkn_train, test = kkn_val, k = 11, scale = TRUE, kernel = "gaussian")
+kkn_model3b <- kknn(V11~., train = kkn_train, test = kkn_val, k = 9, scale = TRUE, kernel = "optimal")
+kkn_model3c <- kknn(V11~., train = kkn_train, test = kkn_val, k = 55, scale = TRUE, kernel = "gaussian")
+kkn_model3d <- kknn(V11~., train = kkn_train, test = kkn_val, k = 20, scale = TRUE, kernel = "optimal")
+
+```
+
+Results of model 3a
+
+```{r}
+accuracy3a <- sum(round(fitted.values(kkn_model3a))== kkn_val[,11])/nrow(kkn_val)
+accuracy3a
+```
+
+Results of model 3b
+
+```{r}
+accuracy3b <- sum(round(fitted.values(kkn_model3b))== kkn_val[,11])/nrow(kkn_val)
+accuracy3b
+```
+
+Results of model 3c
+
+```{r}
+accuracy3c <- sum(round(fitted.values(kkn_model3c))== kkn_val[,11])/nrow(kkn_val)
+accuracy3c
+```
+
+Results of model 3d
+
+```{r}
+accuracy3d <- sum(round(fitted.values(kkn_model3c))== kkn_val[,11])/nrow(kkn_val)
+accuracy3d
+```
+
+Based on prediction results, I am now running the final model on the test data based the results from model 3.a
+
+```{r}
+kkn_model3a_test_data <- kknn(V11~., kkn_train, kkn_test, k = 11, scale = TRUE, kernel = "gaussian")
+accuracy3a_test <- sum(round(fitted.values(kkn_model3a_test_data))== kkn_test[,11])/nrow(kkn_test)
+accuracy3a_test
+```
+
+My accuracy on the test data was ~87%
+
+
+Question 4.1
+
+Describe a situation or problem from your job, everyday life, current events, etc., for which a clustering model would be appropriate. List some (up to 5) predictors that you might use.
+
+Healthcare Fraud Detection Segmentation: For a US based healthcare provider, our aim was to find claims which we believe could be fraudulent. A K Means clustering method was used for anomaly detection and then claim routing to right claim adjudicator.  Some of the K Means clustering dimensions or variables used were
+
+"	Disease category
+"	Claim Type
+"	Age Group
+"	Diagnosis Code
+"	Hospital Type or Healthcare Setting
+
+Question 4.2
+
+The iris data set iris.txt contains 150 data points, each with four predictor variables and one categorical response. The predictors are the width and length of the sepal and petal of flowers and the response is the type of flower.
+
+Use the R function kmeans to cluster the points as well as possible. Report the best combination of predictors, your suggested value of k, and how well your best clustering predicts flower type.
+
+Set up the environment
+
+```{r}
+rm(list =ls())
+set.seed(1)
+iris <- read.table("iris.txt", header = TRUE)
+typeof(iris)
+
+class(iris)
+table(iris[,5], iris$Species) # remioving the "species" column
+set.seed(1) # setting seed so thast the model is reproduceable
+
+```
+
+Look at the data using ggplot
+
+```{r}
+library(ggplot2)
+ggplot(iris, aes(Petal.Length, Petal.Width, color = Species)) + geom_point() # 2 variables
+ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) + geom_point() # 2 variables
+```
+
+Transform the data
+
+```{r}
+iris.new <- iris[,c(1,2,3,4)]
+iris.class <- iris[,"Species"]
+head(iris.new)
+```
+
+Normalize the data
+
+```{r}
+normalize <- function(x){
+  return ((x-min(x))/(max(x)-min(x)))
+}
+
+iris.new$Sepal.Length<- normalize(iris.new$Sepal.Length)
+iris.new$Sepal.Width<- normalize(iris.new$Sepal.Width)
+iris.new$Petal.Length<- normalize(iris.new$Petal.Length)
+iris.new$Petal.Width<- normalize(iris.new$Petal.Width)
+
+head(iris.new)
+```
+
+Now I can use Nb_Clust to predict the number of clusters to use in the model
+
+```{r}
+library("NbClust")
+set.seed(1)
+res.nb <- NbClust(iris.new, distance = "euclidean",
+                  min.nc = 2, max.nc = 10,
+                  method = "complete", index ="gap")
+
+res.nb$Best.nc
+```
+
+Nb_Clust says to use k=3, however we can also check using an elbow diagram
+
+```{r}
+maxkvalue <- 10
+elbow <- sapply(1:maxkvalue, function(k){kmeans(iris.new, k, nstart=20,iter.max = 15 )$tot.withinss})
+plot(1:maxkvalue, elbow, type="b", pch = 19, frame = FALSE, xlab="K-value")
+
+```
+
+The plot confirms that k=3 is a good number to use
+
+Now we can build the model, first I will use all the variables and see what prediction levels that gives me
+
+```{r}
+irisC_ALLsc2 <- kmeans(iris.new[,1:4], 2, nstart = 20)
+irisC_ALLsc3 <- kmeans(iris.new[,1:4], 3, nstart = 20)
+irisC_ALLsc4 <- kmeans(iris.new[,1:4], 4, nstart = 20)
+irisC_ALLsc5 <- kmeans(iris.new[,1:4], 5, nstart = 20)
+```
+
+Now I can view the results
+
+```{r}
+table(irisC_ALLsc2$cluster, iris$Species)
+table(irisC_ALLsc3$cluster, iris$Species)
+table(irisC_ALLsc4$cluster, iris$Species)
+table(irisC_ALLsc5$cluster, iris$Species)
+```
+
+As you can see, k=3 gives us the best model with ~89% accuracy. However we have to be sure that using a different number of variables doesnt give us a more accurate model
+
+As such I will now run the models again with just 2 variables. I chose Petal.Length and Petal.Width
+
+Setting up new model
+
+```{r}
+irisClusterPETsc2 <- kmeans(iris.new[,3:4], 2, nstart = 20)
+irisClusterPETsc3 <- kmeans(iris.new[,3:4], 3, nstart = 20)
+irisClusterPETsc4 <- kmeans(iris.new[,3:4], 4, nstart = 20)
+irisClusterPETsc5 <- kmeans(iris.new[,3:4], 5, nstart = 20)
+```
+
+Now I can view the results
+
+```{r}
+table(irisClusterPETsc2$cluster, iris$Species)
+table(irisClusterPETsc3$cluster, iris$Species)
+table(irisClusterPETsc4$cluster, iris$Species)
+table(irisClusterPETsc5$cluster, iris$Species)
+```
+
+Looking at these results, model irisClusterPETsc3 gives the best predictor
+
+```{r}
+table(irisClusterPETsc3$cluster, iris$Species)
+```
+
+```{r}
+(50+48+46)/(50+48+46+2+4)
+```
+
+Accuracy is now at a whopping 96%, so using 2 variables has resulted in a better model
+
+```{r}
+ggplot(iris,aes(Petal.Length,Petal.Width, color = irisClusterPETsc3$cluster)) +geom_point()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
