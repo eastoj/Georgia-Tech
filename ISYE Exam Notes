@@ -1,0 +1,808 @@
+############################### HWK1 #############################
+
+require(ISLR)
+require(car)
+
+#loads the ISLR Auto dataset into the DataFrame
+df <- ISLR::Auto
+
+#Question 1: Use Summary Function to find Avg value of MPG, cyclinders, HP, weight, 
+#accel, and year
+summary(df)
+
+#Question 2
+#Use the Correlation function to find the two numberc variables with the max negative correlation
+nums <- c("mpg","cylinders","horsepower","year","weight","acceleration")
+#subset to the numberical data
+df2 <- df[nums]
+#create the correlation matrix
+mtx <- cor(df2)
+#ask which element is the smallest
+which.min(mtx)
+#[1] 5 is the smallest, so printing back our matrix we see that is weight / mpg
+mtx
+
+
+#Question 3
+#Please estimate a linear regression model (using the lm function) with mpg as
+#the dependent variable and horsepower as the independent variables. 
+#What is this model’s R-squared value? and Adjusted R2 Value
+
+#set model - here we are predicting mpg as af unction of horsepower
+my_lm <- lm(formula = mpg ~ horsepower, data =df)
+
+#R2 using summary: 0.6059 / Adj R2 = 0.6049
+summary(my_lm)
+
+
+#3C - find Total Sum of Squares, Sum of Squared Errors, and Sum of Squared Regression
+#Total Sum of Squares: 23819
+sum((df$mpg - mean(df$mpg))^2)
+
+#sum of squared errors: 9385... this takes the fitted values minues the observed values, squared
+sum((fitted(my_lm) - df$mpg)^2)
+
+#sum of squared regression = 14433 ... this takes the fitted values minus the avg of the observed values
+sum((fitted(my_lm) - mean(df$mpg))^2)
+
+
+
+#3D - What is the predicted value of mpg for a car that has a horsepower of 101?
+
+#new DF with a value of 101
+new.df <- data.frame(horsepower=c(101))
+
+#predict using my_lm, and passing it the new DF, interval provides the prediction interval
+predict(my_lm, new.df, interval = "prediction")
+# pred = 23,99354 
+# interval = 14.336, 33.65098
+
+
+#3F - estimated horsepower coefficient and is it significant at 5%
+#estimated horsepower coefficient
+summary(my_lm)
+# the coef = -0.157845, it is significant because it has the *** after it
+# F-Statistic = 599.7
+
+#Question 4 Part A
+#Please estimate a linear regression model (using the lm function) 
+#with mpg as the dependent variable and horsepower, cylinders, weight, acceleration, and year as the independent variables. 
+#What is this model’s R-squared value?
+
+#new multiple regression model ... predicting mpg given the other variables
+mult_lm <- lm(formula = mpg ~ horsepower + cylinders + weight + acceleration + year, data = df)
+
+summary(mult_lm)
+#R2 = 0.8087
+#Adjust R2 = 0.8062
+
+#Question 4C
+#Using the model in Question 4 - Part A, please use the predict.lm function in R to make prediction for the mpg for a car 
+#that has a horsepower of 104.5, weight of 3000, 4 cylinders, a model year of 1980, 
+#and an acceleration time of 16 seconds..
+
+#create new df with those values
+new.df2 <- data.frame(horsepower = 104.5, weight = 3000, cylinders =4, year =80, acceleration =16)
+
+#predict from that DF based on the previously fit model: 26.4906 MPG estimated
+predict(mult_lm, new.df2)
+
+#4D List all predictiors of the multiple model that are siginficant at 5%
+summary(mult_lm)
+#weight and year are significant, as identified by ***
+
+
+# Which of the independent variables has the highest Variance Inflation Factor (VIF)?
+vif(mult_lm)
+#horsepower has the highest VIF
+
+#VIF quantifies the severity of the multicollinearity 
+#a VIF of 8.67 means there is sqrt(8.67) times a higher standard error for the coeffiicentof horsepower
+#then there would be if that variable were uncorrelated with other predictor variables
+
+############################### HWK2 #############################
+
+require(ISLR)
+require(dplyr)
+
+df <- ISLR::Carseats
+
+
+# Create a new dataframe (call it C1) that is a copy of Carseats. Create two indicator (dummy) variables:
+#Bad_Shelf = 1 if ShelveLoc = “Bad”, 0 otherwise
+#Good_Shelf = 1 if ShelveLoc = “Good”, 0 otherwise 
+df$bad_shelf <- ifelse(df$ShelveLoc == "Bad",1,0)
+df$good_shelf <- ifelse(df$ShelveLoc == "Good", 1,0)
+
+#Question 1 
+#Please estimate a linear regression model (using the lm function) with Sales as the dependent variable and Price as the independent variable.
+#What is this model’s R-squared value?
+
+my_lm <- lm(formula = Sales ~ Price, data =df)
+
+summary(my_lm) #answer = 0.198
+
+#Question 2
+#Use the model estimated in Question 1. What is this model’s adjusted R-squared value? 
+#Answer : 0.196
+
+#Question 3
+#Use the model estimated in Question 1. What is the estimated coefficient of Price?
+#Answer: -0.053073 
+
+#Question 4 
+# Use the model estimated in Question 1. What is the t- value of the coefficient of Price? 
+#Answer: -9.912 
+
+#Question 5:
+#Use the model estimated in Question 1. Is the estimated coefficient for price 
+#statistically speaking different from 0 (at a significance level of 5%)?
+#Answer: Yes - it is stat sig ... p value is 2 e-16
+
+
+#Question 6:
+#Please estimate a linear regression model (using the lm function)
+#with Sales as the dependent variable and Price, Bad_Shelf, and Good_Shelf as independent variables. 
+#What is this model’s coefficient for the variable "Price"?
+mult_lm <- lm(formula = Sales ~ Price + bad_shelf + good_shelf, data = df)
+
+summary(mult_lm)
+
+#coefficient of price: -0.056698
+#coefficient of bad_shelf: -1.862022
+#coefficient of good_shel = 3.033825
+#What is the average value of Sales when Price = 0 for ShelveLoc = “Medium”?
+13.863824 + (0*-0.05) + (0*-1.86) + (0*3.033) #... since medium means good and bad shelf = 0 and price = 0
+
+#What is the average value of Sales when Price = 0 for ShelveLoc = “Bad”?
+13.863824 + (0*-0.05) + (1*-1.862022) + (0*3.033)
+
+#What is the average value of Sales when Price = 0 for ShelveLoc = “Good”?
+13.863824 + (0*-0.05) + (0*-1.862022) + (1*3.033)
+
+
+#Question 12
+#Please estimate a linear regression model (using the lm function) 
+#with Sales as the dependent variable and Price and ShelveLoc as independent variables. 
+#What is this model’s R-square value?
+
+mult_lm_2 <- lm(formula = Sales ~ Price + ShelveLoc, data = df)
+
+summary (mult_lm_2)
+#R2 = 0.5426
+
+#Question 13
+#what is the average value of Sales when Price = 0 for ShelveLoc = “Bad”?
+12.001802 + (0*-0.056698) + (0*4.895848) + (0*1.862022)
+#12.0018 - notice here that shelveLoc Bad is the "default"
+
+#what is the average value of Sales when Price = 0 for ShelveLoc = “Medium”?
+12.001802 + (0*-0.056698) + (0*4.895848) + (1*1.862022)
+
+#what is the average value of Sales when Price = 0 for ShelveLoc = “Good”?
+12.001802 + (0*-0.056698) + (1*4.895848) + (0*1.862022)
+
+#estimated coefficient of Price: -0.056698 (from the summary)
+
+
+#Question 17
+#Please estimate a linear regression model (using the lm function) 
+#with Sales as the dependent variable and Price, Bad_Shelf, Good_Shelf , Price_Bad_Shelf, and Price_Good_Shelf as independent variables. 
+#What is this model’s base case?
+
+#create new variables
+df$price_bad_shelf <- df$Price*df$bad_shelf
+df$price_good_shelf <- df$Price*df$good_shelf
+
+#fit model
+mult_lm_3 <- lm(formula = Sales ~ Price + bad_shelf + good_shelf + price_good_shelf + price_bad_shelf, data = df)
+summary(mult_lm_3)
+
+#the base case here is medium_shelf- since we do not have that as a predictor variable
+
+#Question 18
+#For the model in Question 17, when price = 0, 
+#is the average sales for products in bad shelf significantly different compared to the base case?
+#Answer: no because the coefficient estimate of price_bad_shelf = -0.001984 so it is very similar to the base case when price = 0
+
+#Question 19
+#For the model in Question 17, for a unit change in price, does the average sales differ significantly between products in good shelf compared to the base case?
+#Answer: no because the coefficient estimate of price_good_shelf = -0.012549 ... I guess there's a subjectivity to "significantly" in the question.
+
+
+
+################
+#### PART 2 ####
+################
+
+#Download the EDSAL.csv file and upload it to a dataframe (in R). The three variables are Education, Experience and Salary.
+
+#Run 4 linear regressions using the lm function in R. (note – you have to use the natural log; the default 'log()' function in R)
+
+#Linlin: Use Salary as the dependent variable and Experience as the independent variable.
+#Linlog: Use Salary as the dependent variable and log(Experience) as the independent variable.
+#Loglin: Use log(Salary) as the dependent variable and Experience as the independent variable.
+#Loglog: Use log(Salary) as the dependent variable and log(Experience) as the independent variable.
+
+
+#load file from CSV
+edsal.csv <- read.csv(file="edsal.csv", header=TRUE, sep=",")
+
+#put into df
+edsal <- edsal.csv
+
+#log exp and log salary columns
+edsal$log_exp <- log(edsal$Experience)
+edsal$log_salary <- log(edsal$Salary)
+
+#each of the four models
+lin_lin <- lm(formula = Salary ~ Experience, data =edsal)
+lin_log <- lm(formula = Salary ~ log_exp, data =edsal)
+log_lin <- lm(formula = log_salary ~ Experience, data =edsal)
+log_log <- lm(formula = log_salary ~ log_exp, data =edsal)
+
+#summaries of each of the four models
+summary(lin_lin)
+summary(lin_log)
+summary(log_lin)
+summary(log_log)
+
+#Question 20 Which of the 4 fitted models has the lowest R-square value?
+summary(lin_lin)$r.squared
+summary(lin_log)$r.squared #lowest R2
+summary(log_lin)$r.squared #highest R2
+summary(log_log)$r.squared 
+
+#### NOTES #### 
+#Level-Level: a 1 unit increase in X increases Y by b1 units
+#Linear Log: A 1% increase in the X increases the Y by (b1/100) units
+#Log Linear: A one unit change in X leads to a (100*b1)% percentage change in Y
+#Log Log: As X increases by 1% Y changes by b1%
+################
+
+#Question 22
+#What is the interpretation of the slope coefficient for the Linlin model estimated in Part 2?
+#Increasing Experience by 1 increases Salaray by 3.0959 units 
+
+#Question 23
+#What is the interpretation of the slope coefficient for the Linlog model estimated in Part 2?
+# Increasing Experience by 1% leads to 34.985/100 units in salary
+
+#Question 24
+#What is the interpretation of the slope coefficient for the Loglin model estimated in Part 2?
+#Increasing Experience by 1 unit leads to (0.037087 * 100)% increase in salary
+
+#Question 25
+#What is the interpretation of the slope coefficient for the Loglog model estimated in Part 2?
+#Increasing Experience by 1% leads to a 0.45949% increase in Salary
+
+############################### HWK3 #############################
+
+
+
+############################### HWK4 #############################
+
+# installing required packages
+install.packages("tnet")
+install.packages("sna")
+library(igraph)
+library(tnet)
+library(sna)
+
+#Creating the required network diagram
+edges <- rbind(c("A", "B"), c( "A", "C"), c("B", "C"), c("B", "D"), c("D", "C"), c("C", "E"), c("D", "G"), c("D", "F"), c("F", "E"), c("F", "G"), c("G", "E"))
+edges
+g <- graph.edgelist(edges, directed=FALSE)
+plot(g)
+
+# Question 1 = False (this is easy to do manualy)
+all_simple_paths(g)
+
+# Question 2 = Calculating max number of possible links
+
+
+#Question 3 = what is the shortest paths from node A to each of the other nodes, or calculating closeness 
+shortest.paths(g)
+
+# Question 4 = Calculating the diameter of a graph
+diameter(g)
+
+# Question 5, in a directed graph the diameter is not always defined
+
+# Question 6= Calculate the node degree centrality
+degree(g)
+
+# Calculate the node closeness
+# remember to normalize Normalization is performed by multiplying the raw closeness by n-1, 
+# where n is the number of vertices in the graph.
+closeness(g, normalized = TRUE)
+
+# Calculate the node Betweenees
+# do not normalize here
+betweenness(g)
+
+# Other code -> Node Betweenness
+
+graph1 <- graph_from_literal(A--B, A--C, B--C, B--D, C--D, C--E, D--F, D--G, E--F, E--G, F--G)
+
+betweenness(graph1, v = V(graph1), weights = NULL, nobigint = TRUE, normalized = FALSE)
+
+# To match the definition of closeness centrality presented in lecture, you must set it equal to TRUE, but for betweenness, set to FALSE!
+
+closeness(graph1, v = V(graph1), weights = NULL, normalized = TRUE)
+
+#### for question 9 and below, i used the below flow for the Amazon Review Data
+
+library(readr)
+library(stargazer)
+library(knitr)
+library(dplyr)
+#library(GGally)
+#library("psych")
+library(ggplot2)
+library(stringr)
+library("ggExtra")
+library(psych)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(readr)
+install.packages("topicmodels")
+library(tidytext)
+library(widyr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(topicmodels)
+
+library(wordcloud)
+library(reshape2)
+library("ldatuning")
+
+#Stemming
+#https://github.com/juliasilge/tidytext/issues/17
+library(SnowballC)
+
+#URL:http://snap.stanford.edu/data/web-FineFoods.html
+
+# load a .txt file
+
+
+amazon_reviews_full <- read_tsv("foods.txt",
+                                col_names = FALSE
+                                #delim = "",
+                                #n_max = 24
+)
+
+#View(head(amazon_reviews_full, 1000))
+
+
+amazon_reviews <- amazon_reviews_full %>% 
+  #head(1000) %>% 
+  separate(col = X1, 
+           into = c("head", "value"),
+           sep = ": ")
+#mutate(seq_num = row_number())
+
+# > head(amazon_reviews)
+# # A tibble: 6 x 2
+#   head        value         
+#   <chr>       <chr>         
+# 1 productId   B001E4KFG0    
+# 2 userId      A3SGXH7AUHU8GW
+# 3 profileName delmartian    
+# 4 helpfulness 1/1           
+# 5 score       5.0           
+# 6 time        1303862400    
+
+review <- data.frame(rev_id = 1:nrow(filter(amazon_reviews, head == "productId")),
+                     productId = filter(amazon_reviews, head == "productId")$value,
+                     userId    = filter(amazon_reviews, head == "userId")$value,
+                     rating     = as.numeric(filter(amazon_reviews, head == "score")$value), 
+                     text      = filter(amazon_reviews, head == "text")$value, 
+                     time      = as.numeric(filter(amazon_reviews, head == "time")$value), 
+                     stringsAsFactors = FALSE)
+
+View(head(review,1000))
+
+#Stemming
+
+wordStem(c('taste','tasted','tasteful','tastefully','tastes','tasting'), language = "english")
+
+#View(head(amazon_reviews_full, 1000))
+
+
+amazon_reviews <- amazon_reviews_full %>% 
+  #head(1000) %>% 
+  separate(col = X1, 
+           into = c("head", "value"),
+           sep = ": ")
+#mutate(seq_num = row_number())
+
+# > head(amazon_reviews)
+# # A tibble: 6 x 2
+#   head        value         
+#   <chr>       <chr>         
+# 1 productId   B001E4KFG0    
+# 2 userId      A3SGXH7AUHU8GW
+# 3 profileName delmartian    
+# 4 helpfulness 1/1           
+# 5 score       5.0           
+# 6 time        1303862400    
+
+review <- data.frame(rev_id = 1:nrow(filter(amazon_reviews, head == "productId")),
+                     productId = filter(amazon_reviews, head == "productId")$value,
+                     userId    = filter(amazon_reviews, head == "userId")$value,
+                     rating     = as.numeric(filter(amazon_reviews, head == "score")$value), 
+                     text      = filter(amazon_reviews, head == "text")$value, 
+                     time      = as.numeric(filter(amazon_reviews, head == "time")$value), 
+                     stringsAsFactors = FALSE)
+
+View(head(review,1000))
+
+## Tidy text
+#Clean up text so that we can get it ready for analysis
+
+#Remove stop words
+
+tidy_amzn <- review %>%
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  filter(word != "br") %>% #HTML tag <br /><br /> results in the word "br"
+  mutate(word = wordStem(word))
+
+#View(head(tidy_amzn,1000))
+#glimpse(tidy_amzn)
+# $ rev_id    <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ...
+# $ productId <chr> "B001E4KFG0", "B001E4KFG0", "B001E4KFG0", "B001E4KFG0", "B001E4KFG0", "B001E4KFG0...
+# $ userId    <chr> "A3SGXH7AUHU8GW", "A3SGXH7AUHU8GW", "A3SGXH7AUHU8GW", "A3SGXH7AUHU8GW", "A3SGXH7A...
+# $ score     <dbl> 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+# $ time      <dbl> 1303862400, 1303862400, 1303862400, 1303862400, 1303862400, 1303862400, 130386240...
+# $ word      <chr> "bought", "vitality", "canned", "dog", "food", "products", "found", "quality", "p...
+
+tidy_amzn
+
+head(tidy_amzn)
+
+## Word count analysis
+tidy_amzn %>% 
+  count(word, sort = TRUE) %>% 
+  slice(1:10)
+
+tidy_amzn %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 100000) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip()
+
+## Word cloud
+tidy_amzn %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+
+## Sentiment analysis
+#The AFINN lexicon assigns words with a score that runs between -5 and 5, with negative scores indicating #negative sentiment and positive scores indicating positive sentiment. 
+
+# > get_sentiments("afinn")
+# # A tibble: 2,476 x 2
+#    word       score
+#    <chr>      <int>
+#  1 abandon       -2
+#  2 abandoned     -2
+#  3 abandons      -2
+#  4 abducted      -2
+#  5 abduction     -2
+#  6 abductions    -2
+#  7 abhor         -3
+#  8 abhorred      -3
+#  9 abhorrent     -3
+# 10 abhors        -3
+
+
+tidy_amzn_sentiment <- tidy_amzn %>%
+  inner_join(get_sentiments("afinn"), by = "word")
+
+
+
+#Now get average sentiment score for each productId to plot rating vs. avg_score
+tidy_amzn_sentiment_prod <- tidy_amzn_sentiment %>% 
+  group_by(productId) %>% 
+  summarise(avg_score=mean(score),
+            sum_score=sum(score),
+            avg_rating = mean(rating))
+
+
+
+ggplot(tidy_amzn_sentiment_prod, aes(x=avg_score, y=avg_rating)) +
+  geom_point(shape=1) +    # Use hollow circles
+  geom_smooth(method=lm,   # Add linear regression line
+              se=TRUE)    # Don't add shaded confidence region
+
+## Topic Modelling
+
+#Latent Dirichlet allocation (LDA) is one of the most common algorithms for topic modeling. Without diving into the math behind the model, we can understand it as being guided by two principles.
+
+#Every document is a mixture of topics. We imagine that each document may contain words from several topics in particular proportions. For example, in a two-topic model we could say “Document 1 is 90% topic A and 10% topic B, while Document 2 is 30% topic A and 70% topic B.”
+#Every topic is a mixture of words. For example, we could imagine a two-topic model of American news, with one topic for “politics” and one for “entertainment.” The most common words in the politics topic might be “President”, “Congress”, and “government”, while the entertainment topic may be made up of words such as “movies”, “television”, and “actor”. Importantly, words can be shared between topics; a word like “budget” might appear in both equally.
+
+#Right now our data frame word_counts is in a tidy form, with one-term-per-document-per-row, but the topicmodels package requires a DocumentTermMatrix. As described in Chapter 5.2, we can cast a one-token-per-row table into a DocumentTermMatrix with tidytext’s cast_dtm().
+
+amzn_dtm <- tidy_amzn %>%
+  count(productId, word, sort = TRUE) %>%
+  ungroup() %>%
+  cast_dtm(productId, word, n)
+
+# 4 topics
+product_lda <- LDA(amzn_dtm, k = 4, control = list(seed = 1234))
+
+product_topics <- tidy(product_lda, matrix = "beta")
+
+top_terms <- product_topics %>%
+  group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+############################### HWK5 #############################
+
+## Association Rules ## Market Basket
+
+library(arules)
+library(arulesViz)
+
+#load the data
+data(Groceries)
+str(Groceries)
+
+# if you want to see some of the data in the basket
+inspect(Groceries)
+
+# if you want to read in a CSV file if you create your own basket
+read.transactions(file.choose())
+
+# to look at the apriori algorthum 
+?apriori
+
+# to look at the Groceries data set
+gr_rules <- apriori(Groceries)
+
+# To look at the support
+itemsets <- eclat(Groceries)[1:5]
+View(itemsets)
+inspect(itemsets)
+
+
+##################### Extra Code Examples from Flight Data ###################
+
+#After installing, we need to call the package to make it available to R
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(stargazer)
+
+
+# Please create a dummy variable “many” that equals 1 when “passengers” is greater than 500, and equals 0 otherwise. 
+# “WN” is the code for Southwest Airlines. http://en.wikipedia.org/wiki/List_of_airline_codes
+# Please create a dummy variable “southwestdom” that equals 1 when “largestcarrier” is equal to “WN”, and equals 0 otherwise. 
+
+
+flight <- read_csv("./FlightData.csv",
+                   col_names = TRUE,
+                   cols(
+                     city1 = col_character(),
+                     city2 = col_character(),
+                     distance = col_integer(),
+                     passengers = col_number(),
+                     airfare = col_double(),
+                     largestcarrier = col_character(),
+                     mktshlargest = col_double(),
+                     lowestfarecarrier = col_character(),
+                     mktshlowestfare = col_number(),
+                     farelargestcarrier = col_double(),
+                     farelowestfarecarrier = col_character()
+                   )) %>% 
+  mutate(many = ifelse(passengers>500,1,0)) %>% 
+  mutate(many_X_dist = many *distance) %>% 
+  mutate(many_X_distlog = many *log(1+distance)) %>% 
+  mutate(southwestdom = ifelse(largestcarrier=="WN",1,0))
+
+
+flight <- flight %>% 
+  mutate(many = ifelse(passengers>500,1,0)) %>% 
+  mutate(southwestdom = ifelse(largestcarrier=="WN",1,0))
+
+
+
+# q1
+# Use dplyr to group by ‘many’ and ‘southwestdom’. Find the average airfare for each group. There will be four groups
+
+flight %>% 
+  group_by(many,southwestdom) %>% 
+  summarise(avg_airfare = mean(airfare))
+
+# Groups:   many [?]
+# many southwestdom avg_airfare
+# <dbl>        <dbl>       <dbl>
+# 1  0            0            232
+# 2  0            1.00         206
+# 3  1.00         0            216
+# 4  1.00         1.00         184
+
+# select(flight, airfare, many,southwestdom) %>% filter(many == 0 , southwestdom == 0) %>% summary() # Mean   :232.20 
+# select(flight, airfare, many,southwestdom) %>% filter(many == 0 , southwestdom == 1) %>% summary() # Mean   :205.5 
+# select(flight, airfare, many,southwestdom) %>% filter(many == 1 , southwestdom == 0) %>% summary() # Mean   :216.50 
+# select(flight, airfare, many,southwestdom) %>% filter(many == 1 , southwestdom == 1) %>% summary() # Mean   :183.6 
+
+
+# q2
+# Run linear regression with airfare as the dependent variable, ‘many’ and ‘southwestdom’ as the independent variables. Now, can you use the below table to derive the individual group means obtained in #1 from the regression model? Show your work as to how you got your answers
+
+reg1 <- lm(airfare ~  many + southwestdom , data = flight)
+summary(reg1)
+
+# Solution:
+# lm(formula = airfare ~ many + southwestdom, data = flight)
+# 
+# Residuals:
+#   Min       1Q   Median       3Q      Max 
+# -134.462  -40.935   -2.984   35.858  164.666 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)   233.082      2.508  92.930  < 2e-16 ***
+#   many          -17.688      3.356  -5.271 1.66e-07 ***
+#   southwestdom  -29.417      3.575  -8.229 5.86e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 52.69 on 997 degrees of freedom
+# Multiple R-squared:  0.08689,	Adjusted R-squared:  0.08506 
+# F-statistic: 47.44 on 2 and 997 DF,  p-value: < 2.2e-16
+
+
+# The formula is -17.688(many) - 29.417(southwestdom) + 233.082 = airfare
+# -17.788*(0) - 29.417*(0) + 233.082 = 233.082: The mean predicted by the regression model comes very close to the actual mean of 232.2041
+# -17.788*(0) - 29.417*(1) + 233.082 = 203.665: The mean predicted by the regression model comes very close to the actual mean of 205.5138
+# -17.788*(1) - 29.417*(0) + 233.082 = 215.294: The mean predicted by the regression model comes very close to the actual mean of 216.4954
+# -17.788*(1) - 29.417*(1) + 233.082 = 185.877: The mean predicted by the regression model comes very close to the actual mean of 183.5835
+
+# q3
+# Create a scatterplot with airfare as y axis and distance as the x axis with the regression line shown. Interpret the plot.
+
+ggplot(flight, aes(x=distance, y=airfare)) + geom_point() +
+  scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE) # Extend regression lines
+
+
+# According to the scatterplot, there is a positive relationship between distance and airfare. As the distance increases, we see an increase in airfare.
+# When distance is zero, airfare is around 180, which can be interpretted as the fixed cost of operating the aircraft. Therafter, for every unit increase, airfare increases by the slope.
+
+
+# q4
+# Please run a linear regression to understand how “airfare” can be predicted by “distance”. Please write down your interpretation of the two coefficients in such a linear regression. 
+
+reg2 <- lm(airfare ~  distance , data = flight)
+summary(reg2)
+# Call:
+#   lm(formula = airfare ~ distance, data = flight)
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -120.96  -30.95   -6.47   25.33  188.38 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 153.86034    2.61789   58.77   <2e-16 ***
+#   distance      0.05894    0.00215   27.41   <2e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 41.62 on 998 degrees of freedom
+# Multiple R-squared:  0.4296,	Adjusted R-squared:  0.429 
+# F-statistic: 751.5 on 1 and 998 DF,  p-value: < 2.2e-16
+
+
+# Both of the incercept and non-intercept coefficients are statistically significant
+# 
+# The intercept means that the dependent variable “airfare” has a predicted value of 153.86034 when the independent variable “distance” equals 0. This can be considered the fixed cost of operating the aircraft.
+# 
+# The coefficient on the independent variable “distance” means that a unit change of “distance” will lead to a 0.05894 change in the dependent variable “airfare”.
+# 
+# This is consistent with the scatter plot obtained in q3.
+
+
+
+# q5
+
+# Please run a linear regression to understand how “airfare” can be predicted by “distance” for a subsample in the whole sample with “many” being 1. Please run a linear regression to understand how “airfare” can be predicted by “distance” for a subsample in the whole sample with “many” being 0. Please write down your interpretation of the two coefficients in such a linear regression
+
+reg3 <- lm(airfare ~  distance , data = filter(flight,many == 0))
+reg4 <- lm(airfare ~  distance , data = filter(flight,many == 1))
+
+
+# Both of the incercept and non-intercept coefficients are statistically significant for both the models.
+# 
+# For many == 0:
+# The coefficient on the independent variable “distance” means that a change of 1 in “distance” will lead to a 0.068 change in the dependent variable “airfare” within the subsample of 501 or more passengers
+# 
+# The intercept means that the dependent variable “airfare” has a predicted value of 133.982 when the independent variable “distance” equals 0 within the subsample of 501 or more passengers
+# 
+# many == 1:
+# 
+# The coefficient on the independent variable “distance” means that a change of 1 in “distance” will lead to a 0.052 change in the dependent variable “airfare” within the subsample of 500 or less passengers
+# 
+# The intercept means that the dependent variable “airfare” has a predicted value of 169.444 when the independent variable “distance” equals 0 within the subsample of 500 or less passengers
+
+# q6
+
+# Please run ONE linear regression to generate all the results in question 6. Please write down your interpretation of all the coefficients in such a linear regression. 
+reg5 <- lm(airfare ~  distance + many+ many_X_dist, data = flight)
+summary(reg5)
+
+# All of the incercept and non-intercept coefficients are statistically significant.
+# 
+# By introducing the interaction term `many_X_dist` and the dummy vairable `many`, we modify both the intercept and slope of the regression.
+# 
+# The overall regression equation is:
+# 
+# airfare = 169.444 -35.461 x many + 0.052 x distance + 0.016 x many_X_dist
+# 
+# For many = 0, we substitute `many` with the value `0` to get
+# 
+# airfare = 169.444 -35.461 x (0) + 0.052 x distance + 0.016 x (0) 
+#         = 169.444 +  0.052 x distance
+#     
+# This is the same regression model obtained in 1st part of q6.
+# 
+# For many = 1, we substitute `many` with the value `1` to get
+# 
+# airfare = 169.444 -35.461 x (1) + 0.052 x distance + 0.016 x (1) 
+#         = (169.444 - 35.461) + (0.052 + 0.016)  x distance
+#         = 133.983 + 0.068 x distance
+# 
+# This is the same regression model obtained in 2nd part of q6.
+
+# q7
+
+# Now, can you use ggplot with grouping on ‘many’ to show the two regression lines in the graph? Please interpret the plot explaining how it relates to questions 5,6 and 7.
+
+ggplot(flight, aes(x=distance, y=airfare, color=factor(many))) + geom_point() +
+  scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE) # Extend regression lines
+
+
+# This plot shows the regressions calculated in the previous questions. It depicts how distance affects airfare with a distinction in regressions between 500 or less passengers and 501 and more passengers. The regression line for many = 0 shows a less steeper slope than many = 1 and it shows a higher intercept.
+
+# q8
+# Now can you create a scatter plot (with regression lines) with facets for two factor variables – many and southwestdom ? Please interpret the plot explaining how intercept and slope is for each facet. [Hint: see http://www.cookbook-r.com/Graphs/Facets_(ggplot2)/ for examples on how to construct facets]
+
+ggplot(flight, aes(x=distance, y=airfare, color=factor(southwestdom))) + geom_point() +
+  scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE) + # Extend regression lines
+  facet_grid(factor(southwestdom) ~ factor(many))
+
+
+# The graph at the top left quadrant (0,0) decpicts the scatterplot (with a regression line) of how distance affects airfare when there are passengers of 500 or less and when Southwest is not the largest carrier. There is a moderate to strong postitive relationship between airfare and distance. The incercept seems to be between 150 and 200. The slope is not too steep and it is positive.
+# 
+# The graph at the top right quadrant (1,0) decpicts the scatterplot (with a regression line) of how distance affects airfare when there are passengers of 500 or less and when Southwest is the largest carrier. There is a strong postitive relationship between airfare and distance. The incercept seems to be between 100 and 150. The slope is not too steep and it is positive.
+# 
+# The graph at the bottom left quadrant (0,1) decpicts the scatterplot (with a regression line) of how distance affects airfare when there are passengers of 501 or more and when Southwest is not the largest carrier. There is a moderate to strong postitive relationship between airfare and distance. The incercept seems to be between 100 and 150. The slope is slightly steeper and it is positive.
+# 
+# The graph at the top left quadrant (1,1) decpicts the scatterplot (with a regression line) of how distance affects airfare when there are passengers of 501 or more and when Southwest is the largest carrier. There is a moderate to strong postitive relationship between airfare and distance. The incercept seems to be between 100 and 150. The slope is slightly steeper and it is positive.
